@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.pyo
+edje/
+*.lyx~
+*.lyx#
+.venv/
