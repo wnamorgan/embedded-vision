@@ -10,3 +10,4 @@ targets/colab/custom_data/
 targets/colab/data/
 targets/colab/train_val_split.py
 temp/
+targets/colab/data.yaml
