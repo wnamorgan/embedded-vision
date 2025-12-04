@@ -1,0 +1,614 @@
+#LyX 2.4 created this file. For more info see https://www.lyx.org/
+\lyxformat 620
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\begin_preamble
+\usepackage[a4paper,
+            bindingoffset=0.2in,
+            left=1in,
+            right=1in,
+            top=1in,
+            bottom=1in,
+            footskip=.25in]{geometry} 
+\usepackage{afterpage}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{listings}
+\usepackage{physics}
+\usepackage{placeins}
+\usepackage{xcolor}
+\renewcommand{\baselinestretch}{1.5}
+\DeclareMathOperator{\hr}{hr}
+\DeclareMathOperator{\m}{m}
+\DeclareMathOperator{\g}{g}
+\DeclareMathOperator{\Hz}{Hz}
+\DeclareMathOperator{\pixel}{pixel}
+\DeclareMathOperator{\mm}{mm}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+
+\usepackage{tcolorbox,url}
+\tcbuselibrary{skins,xparse,listings}
+
+\newtcblisting{ubuntu}{colback=violet!50!black, 
+colupper=white,colframe=gray!65!black,listing only, listing options={style=tcblatex,language=sh,escapeinside=||,}, 
+title={\textcolor{orange}{\Huge{$\bullet$}}{\textcolor{gray}{\Huge{$\bullet\bullet$}}}}, 
+every listing line={\textcolor{lime}{\small\ttfamily\bfseries root@ubuntu{\textcolor{white}:}\textcolor{cyan!60}{$^{\sim}$}{\textcolor{white}\#} }}} 
+\newlength{\Lind} 
+\setbox0\hbox{\small\ttfamily\bfseries root@} 
+\setlength{\Lind}{\the\dimexpr\wd0+1pt} 
+\newcommand{\LR}{\\\hspace*{-\Lind}} 
+
+
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=purple,bookmarksopen=true,pdfstartview=FitH]{hyperref}
+\usepackage[open,openlevel=1]{bookmark}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children no
+\language american
+\language_package default
+\inputencoding utf8
+\fontencoding auto
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_roman_osf false
+\font_sans_osf false
+\font_typewriter_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\float_placement class
+\float_alignment class
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_formatted_ref 0
+\use_minted 0
+\use_lineno 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tablestyle default
+\tracking_changes false
+\output_changes false
+\change_bars false
+\postpone_fragile_content true
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\docbook_table_output 0
+\docbook_mathml_prefix 1
+\end_header
+
+\begin_body
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+The focus on these notes is object detection,
+ which has unique tools and challenges,
+ different from related
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+footnote{Tasks such as image segmentation,
+ semantic segmentation,
+ instance segmentation,
+ and panoptic segmentation are discussed in the YouTube link.}
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://youtu.be/5QUmlXBb0MY?si=yueLdaCufC5Iye6u}{image processing}
+\end_layout
+
+\end_inset
+
+ tasks,
+ including the closely related task of 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://learnopencv.com/object-tracking-using-opencv-cpp-python/}{object tracking}
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Objective
+\end_layout
+
+\begin_layout Standard
+The objective is a run real-time image processing pipeline on:
+ (1) a local linux desktop with a GPU;
+ (2) on Orin Nano;
+ (3) a 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://hailo.ai/products/ai-accelerators/hailo-8-ai-accelerator/}{Hailo-8}
+\end_layout
+
+\end_inset
+
+ GPU accelerator connected to an edge device.
+ 
+\end_layout
+
+\begin_layout Subsection
+Quick Introduction to YOLO
+\end_layout
+
+\begin_layout Standard
+YOLO is maintained by ultralytics.
+ There are several 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://colab.research.google.com/github/ultralytics/ultralytics/blob/main/examples/tutorial.ipynb}{google colab}
+\end_layout
+
+\end_inset
+
+ that allow users to walk through basic image processing pipelines.
+ Google Colab is an online platform that allows users access to a clean operating system and GPU accelerator,
+ as demonstrated in this 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://youtu.be/ZN3nRZT7b24?si=7nzLLS0xesmjcSIu}{YouTube}
+\end_layout
+
+\end_inset
+
+ video.
+\end_layout
+
+\begin_layout Subsection
+Google Colab
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://colab.research.google.com/}{Google Colab}
+\end_layout
+
+\end_inset
+
+ is tool that allows users to interact with a remote system,
+ including GPU,
+ through a Jupyter Notebook interface.
+ A good over of Google Colab is provided in this 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://youtu.be/FXKMmilL70w?si=zAgMXX4y6rEp5QEQ}{YouTube}
+\end_layout
+
+\end_inset
+
+ video.
+\end_layout
+
+\begin_layout Section
+Image Collection,
+ Labeling and Storage
+\end_layout
+
+\begin_layout Standard
+write me
+\end_layout
+
+\begin_layout Subsection
+Online Image Storage with Hugging Face
+\end_layout
+
+\begin_layout Standard
+Images can be stored locally of course,
+ but this creates multiple copies and prevents general access.
+ They can also be stored online with paid private sources like Amazon S3,
+ or with free public sources like hugging face.
+ You can make an account with 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://huggingface.co/join}{huggingface}
+\end_layout
+
+\end_inset
+
+ and your username is used to push and pull image sets.
+ While there is a command line interface,
+ it is easiest to create a dataset through hugging face web interface.
+ Here is a typical workflow.
+ First,
+ zip an image setup as follows.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ zip -r data.zip folder_name/
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+Then,
+ create a new data set,
+ e.g.,
+ 
+\begin_inset Quotes eld
+\end_inset
+
+coins
+\begin_inset Quotes erd
+\end_inset
+
+ through the hugging face web interface,
+ and upload the files.
+ This will create an online git repository with our data.
+ Now,
+ you can access an unzip this data as follows.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ wget https://huggingface.co/datasets/wnamorgan/<dataset>/resolve/main/data.zip
+\end_layout
+
+\begin_layout Plain Layout
+
+$ unzip data.zip
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+You can install the python datasets package,
+ to interact with hugging face,
+ but using wget and unzip is a bit more streamlined.
+\end_layout
+
+\begin_layout Section
+Software
+\end_layout
+
+\begin_layout Standard
+Key Softrware elemetns,
+ including learning frameworks will be discussed here.
+\end_layout
+
+\begin_layout Section
+Python
+\end_layout
+
+\begin_layout Standard
+Python Packages will be briefly discussed here as well as relevant packages in various packages.
+\end_layout
+
+\begin_layout Subsection
+OpenCV
+\end_layout
+
+\begin_layout Standard
+OpenCV has a myriad of uses and needs no introduction,
+ other than tips on how to enable and verify GPU useage.
+ Basic OpenCV can be installed with PIP by the following.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ pip install opencv-python
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+For the main package with additional "contrib" modules (often includes more advanced features).
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ pip install opencv-contrib-python
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Ultralytics
+\end_layout
+
+\begin_layout Standard
+YOLO (You Only Look Once) refers to a family of object detection models known for their real-time performance.
+ Ultralytics is a company and a software package that develops and maintains several versions of the YOLO models.
+ Ultralytics offers the tools and framework to easily train,
+ use,
+ and deploy these models for various computer vision tasks.
+ The ultralytics package can be installed as follows.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ pip install ultralytics
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+TorchVision
+\end_layout
+
+\begin_layout Standard
+If you have an NVIDIA GPU,
+ you can install the GPU-enabled version of PyTorch by issuing the following command.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ pip install --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+GPU Diagnostics
+\end_layout
+
+\begin_layout Standard
+This section will demonstrate ways of interrogating GPU availability and useage.
+\end_layout
+
+\begin_layout Subsection
+Ultralytics
+\end_layout
+
+\begin_layout Standard
+If using the python Ultralytics package,
+ the presence of the GPU (and other resources) as follows (at a python prompt).
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ import ultralytics
+\end_layout
+
+\begin_layout Plain Layout
+
+$ ultralytics.checks()
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
