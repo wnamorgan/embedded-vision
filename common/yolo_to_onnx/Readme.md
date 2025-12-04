@@ -1,0 +1,2 @@
+The file main.py demonstrates a how a yolo inference model can be exported to onnx with a few lines of code.
+The exported onnx file will be placed in the root folder and used tested with the zidane.jpg image

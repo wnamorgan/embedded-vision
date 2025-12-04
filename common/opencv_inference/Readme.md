@@ -1,0 +1,1 @@
+This is an example inference that uses only opencv and an onnx model.  You don't need a GPU to run this script.  You just need python opencv-python installed (pip install opencv-python).
