@@ -13,3 +13,4 @@ temp/
 targets/colab/data*
 targets/colab/runs/
 targets/colab/yolo11*
+runs/
