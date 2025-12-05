@@ -14,3 +14,5 @@ targets/colab/data*
 targets/colab/runs/
 targets/colab/yolo11*
 runs/
+targets/colab/my_model.zip
+targets/colab/my_model/
