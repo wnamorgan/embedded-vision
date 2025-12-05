@@ -352,7 +352,7 @@ begin{lstlisting}[language=bash,style=mystyle]
 
 \begin_layout Plain Layout
 
-$ zip -r data.zip folder_name/
+$ zip -r data.zip *
 \end_layout
 
 \begin_layout Plain Layout
@@ -364,7 +364,14 @@ end{lstlisting}
 
 \end_inset
 
-Then,
+Note,
+ you should be in a folder that has the following items:
+ (1) a folder called images that contains all images;
+ (2) a folder called labels,
+ with text files corresponding to the images in the image folder;
+ and (3) a small text file called classes.txt,
+ which has a list of the classes that are correspond to the label ID in the labeled text files.
+ Then,
  create a new data set,
  e.g.,
  
@@ -412,6 +419,121 @@ end{lstlisting}
 You can install the python datasets package,
  to interact with hugging face,
  but using wget and unzip is a bit more streamlined.
+\end_layout
+
+\begin_layout Subsubsection
+Repository Interface
+\end_layout
+
+\begin_layout Standard
+More advanced use cases will warrant useage of the repository interface.
+ In your user account you can get the URL of the git repository of interest and simply clone.
+ However,
+ only a link will be included for the data in the resulting clone.
+ You must use lfs to pull the binary data,
+ which is installed as follows.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ sudo apt-get update
+\end_layout
+
+\begin_layout Plain Layout
+
+$ sudo apt-get install git-lfs
+\end_layout
+
+\begin_layout Plain Layout
+
+$ git lfs install
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+Next,
+ go into the repository and issue the following command.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ git lfs pull
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+This will replace the low byte count link with the actual zip file.
+ You can now unzip the data,
+ make changes,
+ zip it back up and then commit.
+ If this is the first commit you have done with hugging face,
+ you will need to generate a key via the web interface to have terminal write access your repositories.
+ You can now start the get credential helper which will store the token you enter when you push.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ git config --global credential.helper store
+\end_layout
+
+\begin_layout Plain Layout
+
+$ git push
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+This will require you to enter your username and then the token for the password.
+ Further commits will be automatic without need of a password.
+ 
 \end_layout
 
 \begin_layout Section
