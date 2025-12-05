@@ -23,7 +23,7 @@ def create_data_yaml(path_to_classes_txt, path_to_data_yaml):
 
     # Create data dictionary
     data = {
-        'path': '/content/data',
+        'path': 'data',
         'train': 'train/images',
         'val': 'validation/images',
         'nc': number_of_classes,
