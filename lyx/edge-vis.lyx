@@ -558,8 +558,14 @@ OpenCV
 \end_layout
 
 \begin_layout Standard
-OpenCV has a myriad of uses and needs no introduction,
- other than tips on how to enable and verify GPU useage.
+OpenCV is a fast C++/Python vision library for image I/O and classical CV,
+ plus a lightweight inference runtime via cv2.dnn.
+ You don’t train models in it,
+ but you can run exported ONNX/other models,
+ which is handy when you want a single dependency that handles camera input,
+ preprocessing,
+ ONNX inference,
+ and rendering on an embedded box.
  Basic OpenCV can be installed with PIP by the following.
 \begin_inset ERT
 status open
@@ -610,16 +616,174 @@ end{lstlisting}
 
 \end_inset
 
+ Key openCV configuration parameters can be inspected as follows.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+renewcommand{
+\backslash
+baselinestretch}{1.0}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=Python,
+ style=mystyle]
+\end_layout
+
+\begin_layout Plain Layout
+
+import cv2
+\end_layout
+
+\begin_layout Plain Layout
+
+print(f"cv2 Version = {cv2.__version__}")
+\end_layout
+
+\begin_layout Plain Layout
+
+print(cv2.cuda.getCudaEnabledDeviceCount())
+\end_layout
+
+\begin_layout Plain Layout
+
+print(cv2.getBuildInformation())
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+renewcommand{
+\backslash
+baselinestretch}{1.5}
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
 \begin_layout Subsection
-Ultralytics
+PyTorch
 \end_layout
 
 \begin_layout Standard
-YOLO (You Only Look Once) refers to a family of object detection models known for their real-time performance.
- Ultralytics is a company and a software package that develops and maintains several versions of the YOLO models.
+PyTorch is a deep-learning framework for Python that lets you build,
+ train,
+ and run neural nets using tensors and automatic differentiation.
+ Its main users are researchers,
+ ML engineers,
+ and applied developers who want to prototype quickly and still be able to ship real systems.
+ It stands out because it runs “eagerly” by default (code executes line by line like normal Python),
+ which makes debugging and iterating on models straightforward.
+ The ecosystem adds pieces like torchvision (vision models,
+ datasets,
+ transforms) and torch.utils.data (data pipelines),
+ so you don’t have to write all the boilerplate yourself.
+ In a typical image pipeline,
+ you read frames with something like OpenCV,
+ convert them to tensors,
+ apply resizing/normalization transforms,
+ then feed them into a PyTorch model for classification,
+ detection,
+ or segmentation.
+ The model outputs logits,
+ bounding boxes,
+ or masks,
+ which you post-process (thresholding,
+ NMS,
+ coordinate transforms) and then pass to tracking,
+ control,
+ or UI code.
+ For training,
+ PyTorch gives you optimizers,
+ loss functions,
+ and GPU support,
+ so you can run large batches and modern architectures without reinventing anything.
+ For deployment,
+ you usually export the trained model to ONNX,
+ TorchScript,
+ or a vendor-specific format (TensorRT,
+ TFLite,
+ etc.) that runs on your edge hardware.
+ In short,
+ PyTorch is the training and inference engine in the middle of the image pipeline;
+ other tools handle getting pixels in and out,
+ but PyTorch does the learned mapping from images to useful decisions.
+\end_layout
+
+\begin_layout Subsection
+Tensor Flow
+\end_layout
+
+\begin_layout Standard
+TensorFlow is a deep-learning framework,
+ typically used via its Keras API,
+ for defining,
+ training,
+ and deploying neural networks across servers,
+ mobile,
+ and embedded devices.
+ Its main users are ML engineers and teams who want an ecosystem that covers everything from data pipelines to serving,
+ rather than just a modeling library.
+ Compared with PyTorch,
+ TensorFlow usually has a steeper learning curve:
+ you often deal with more configuration knobs (graph vs eager modes historically,
+ distribution strategies,
+ SavedModel formats,
+ TF data pipelines) and more explicit control over deployment details.
+ You define models in Keras (sequential,
+ functional,
+ or subclassed),
+ train them with built-in optimizers and losses,
+ and use GPUs/TPUs when you need scale,
+ but you’re generally more exposed to “meta-level” choices about training setup and export options than in Ultralytics or other opinionated toolkits.
+ In image pipelines,
+ TensorFlow fits as the core model engine while tf.data or OpenCV handle reading,
+ resizing,
+ augmenting,
+ and batching images before feeding tensors into the network.
+ The model outputs probabilities,
+ boxes,
+ or masks;
+ you then run your own post-processing (thresholds,
+ NMS,
+ coordinate transforms) before passing results to tracking,
+ control logic,
+ or UI.
+ TensorFlow’s edge angle is TensorFlow Lite:
+ you convert trained models to .tflite (often quantized) and run them on phones,
+ MCUs,
+ or NPUs where a TFLite runtime exists.
+ On the server side,
+ you typically put the trained model behind TensorFlow Serving or a custom Python/HTTP service.
+ Overall,
+ TensorFlow is less “plug-and-play” than something like Ultralytics YOLO,
+ but it gives you a unified,
+ production-oriented stack if you’re willing to manage the extra complexity.
+\end_layout
+
+\begin_layout Subsection
+Ultralytics and YOLO
+\end_layout
+
+\begin_layout Standard
+Ultralytics is a company and a software package that develops and maintains several versions of the YOLO models.
  Ultralytics offers the tools and framework to easily train,
  use,
  and deploy these models for various computer vision tasks.
@@ -648,7 +812,19 @@ end{lstlisting}
 
 \end_inset
 
-
+While Ultralytics is a generic training/inference engine,
+ YOLO is the primary use case for the package.
+ YOLO (You Only Look Once) refers to a family of object detection models known for their real-time performance.
+ All recent YOLO models are built on PyTorch.
+ YOLO models are denoted by a version number (e.g.,
+ YOLO8 and YOLO11) followed by a letter:
+ (n) Nano models with about 2.6M parameters;
+ (s) Small models;
+ (m) Medium models with about 20.1M parameters;
+ (l) Large with 25.3M parameters;
+ and (x),
+ or Extra Large models which achieve maximum performance.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -725,6 +901,382 @@ $ ultralytics.checks()
 
 \backslash
 end{lstlisting}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+NVIDIA Edge Devices 
+\end_layout
+
+\begin_layout Standard
+Jetson users can employ the 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://github.com/rbonghi/jetson_stats}{jetson-stats}
+\end_layout
+
+\end_inset
+
+ for monitoring and control of Jetson components,
+ including the GPU.
+ Simply type 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://www.youtube.com/watch?v=2cc6Irm0WuA}{jtop}
+\end_layout
+
+\end_inset
+
+ at the command line to run jetson-stats.
+\end_layout
+
+\begin_layout Section
+NVIDIA Edge Devices
+\end_layout
+
+\begin_layout Standard
+On NVIDIA platforms it is useful to distinguish between how networks are trained and how they are executed at the edge.
+ Training is typically done on a workstation or server using general-purpose GPU frameworks such as PyTorch (often with torchvision) or TensorFlow/Keras,
+ which expose CUDA-accelerated tensors and automatic differentiation but do not assume any particular deployment target.
+ Once a model is trained and validated,
+ it is exported from the framework’s native format (for example,
+ as an ONNX file or a PyTorch checkpoint) and then adapted to the edge device using hardware-specific tools that optimize inference latency,
+ power,
+ and memory use.
+\end_layout
+
+\begin_layout Standard
+In a typical workflow,
+ training happens off-board in a framework such as PyTorch (optionally with torchvision for datasets,
+ transforms,
+ and pretrained models) or TensorFlow/Keras,
+ and models are saved in the framework’s native format before being exported to an interchange format like ONNX.
+ At deployment time,
+ many edge systems do not run these full training frameworks;
+ instead,
+ they often rely on lightweight components such as OpenCV (or NVIDIA image libraries) for camera I/O and GPU- or CPU-accelerated preprocessing,
+ a compiled inference engine such as TensorRT (fed from an ONNX model) for the forward pass,
+ and then OpenCV or custom code again for postprocessing (non-maximum suppression,
+ coordinate transforms,
+ overlays,
+ tracking,
+ and control logic).
+ In other words,
+ PyTorch/torchvision (and similar tools) are primarily training-time utilities,
+ while OpenCV and TensorRT (and their NVIDIA counterparts) are primarily run-time tools for efficient pre-/post-processing and inference on the edge.
+ When using Ultralytics YOLO,
+ the same Python package can also act as a deployment wrapper around TensorRT,
+ handling preprocessing,
+ engine execution,
+ and YOLO-specific decoding/NMS on the device.
+\end_layout
+
+\begin_layout Subsection
+Deployment with TensorRT
+\end_layout
+
+\begin_layout Standard
+TensorRT is NVIDIA’s inference engine and optimizer for running trained neural networks as efficiently as possible on their GPUs,
+ including Jetson and Orin devices.
+ It acts as a compiler that takes an ONNX model and produces a TensorRT engine (.engine or .plan):
+ a hardware-specific,
+ binary-optimized model with fused layers and reduced precision (FP16/INT8).
+ You do not train in TensorRT;
+ you only deploy and optimize an already-trained network.
+ In an image pipeline it typically sits in the middle:
+ camera + OpenCV preprocessing → TensorRT engine → postprocessing (NMS,
+ coordinate transforms,
+ temporal filtering) → tracking,
+ control,
+ or UI.
+ In summary,
+ TensorRT is the step that turns a generic model into one that runs as fast as possible on NVIDIA hardware.
+\end_layout
+
+\begin_layout Subsection
+TensorRT Deployment
+\end_layout
+
+\begin_layout Standard
+TensorRT can be used directly via its C++ or Python APIs,
+ but doing so typically requires detailed knowledge of the model architecture and output format,
+ along with custom implementations of preprocessing,
+ decoding,
+ and non-maximum suppression.
+ This provides maximum control but demands significant development time and model-specific insight.
+ For many use cases it is more expedient to use a higher-level Python package such as Ultralytics YOLO,
+ which wraps TensorRT and automatically handles these model-specific steps,
+ from image normalization and batching to YOLO decoding and NMS.
+ In this way,
+ developers retain the performance advantages of TensorRT while avoiding much of the glue code that a direct integration would require.
+ In this work,
+ TensorRT engines produced from YOLO models are invoked through the Ultralytics runtime rather than via raw TensorRT API calls,
+ trading some low-level control for a simpler and more maintainable edge deployment.
+\end_layout
+
+\begin_layout Subsubsection
+Engine Creation
+\end_layout
+
+\begin_layout Standard
+TensorRT’s trtexec tool can be used to build an engine without any additional framework dependencies.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=bash,style=mystyle,
+ caption = Offline build step:
+ PyTorch checkpoint → TensorRT engine]   
+\end_layout
+
+\begin_layout Plain Layout
+
+$ trtexec --onnx=model.onnx --saveEngine=model.engine --fp16
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting}
+\end_layout
+
+\end_inset
+
+ You can also create the RT engine file with packages like Ultralytics.
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+renewcommand{
+\backslash
+baselinestretch}{1.0}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=Python,
+ style=mystyle,
+ caption=Offline build step:
+ PyTorch checkpoint (.pt) → TensorRT engine (.engine) ,label={lsting:
+ pytorch to engine}]
+\end_layout
+
+\begin_layout Plain Layout
+
+from ultralytics import YOLO
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+model = YOLO("yolo11n.pt")
+\end_layout
+
+\begin_layout Plain Layout
+
+model.export(format="engine",
+ device="cuda",
+ half=True)  # produces yolo11n.engine
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+renewcommand{
+\backslash
+baselinestretch}{1.5}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+TensorRT Runtime Inference
+\end_layout
+
+\begin_layout Standard
+To streampline deployment,
+ it is conveinent to use inference piplines built ontop of TensorRT.
+ Two good choices are 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://github.com/dusty-nv/jetson-inference}{NVIDIA's DNN library}
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+href{https://docs.ultralytics.com/guides/nvidia-jetson/#use-tensorrt-on-nvidia-jetson}{Ultralytics}
+\end_layout
+
+\end_inset
+
+.
+ The focus here is on Ultralytics,
+ since the pipeline it provides can readily be adapted to other edge devices that do not use TensorRT..
+ The basic inference process is illustrated in Listing 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+ref{lsting:
+ yolo and tensorRT}
+\end_layout
+
+\end_inset
+
+.
+ 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+renewcommand{
+\backslash
+baselinestretch}{1.0}
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{lstlisting}[language=Python,
+ style=mystyle,
+ caption=Offline build step:
+ PyTorch checkpoint (.pt) → TensorRT inference,
+ label={lsting:
+ yolo and tensorRT}]
+\end_layout
+
+\begin_layout Plain Layout
+
+from ultralytics import YOLO
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Load a YOLO11n PyTorch model
+\end_layout
+
+\begin_layout Plain Layout
+
+model = YOLO("yolo11n.pt")
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Export the model to TensorRT
+\end_layout
+
+\begin_layout Plain Layout
+
+model.export(format="engine")  # creates 'yolo11n.engine'
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Load the exported TensorRT model
+\end_layout
+
+\begin_layout Plain Layout
+
+trt_model = YOLO("yolo11n.engine")
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+# Run inference
+\end_layout
+
+\begin_layout Plain Layout
+
+results = trt_model("https://ultralytics.com/images/bus.jpg")
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{lstlisting} 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+renewcommand{
+\backslash
+baselinestretch}{1.5}
 \end_layout
 
 \end_inset
