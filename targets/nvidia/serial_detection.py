@@ -13,12 +13,12 @@ import util
 # Camera settings
 CAM_INDEX = 0           # /dev/video0
 WIDTH, HEIGHT = 1280, 720
-CONF_THRES = 0.25       # YOLO confidence threshold
+CONF_THRES = 0.85       # YOLO confidence threshold
 
 
 # Paths
 FILE_PATH  = Path(__file__).resolve().parent
-MODEL_PATH = (FILE_PATH / "yolo11n.pt").resolve()
+MODEL_PATH = (FILE_PATH / "yolo11n_coins.pt").resolve()
 
 
 def main():
@@ -62,7 +62,7 @@ def main():
                 frame,
                 device=util.DEVICE,
                 imgsz=util.IMG_SIZE,
-                conf=CONF_THRES,
+                conf=0.5, # Do thresholding in post processing
                 verbose=False,
             )
             if torch.cuda.is_available():
@@ -80,7 +80,18 @@ def main():
             else:
                 fps_ema = (1.0 - alpha) * fps_ema + alpha * inst_fps
 
-            annotated = results[0].plot()
+
+            r = results[0]
+            boxes = r.boxes
+            if boxes is None or len(boxes) == 0:
+                annotated = frame.copy()
+            else:
+                keep = boxes.conf >= CONF_THRES
+                boxes = boxes[keep]
+
+            r_filtered = r
+            r_filtered.boxes = boxes
+            annotated = r_filtered.plot()
 
             fps_text = f"{fps_ema:5.1f} FPS ({dt_ms:4.1f} ms)"
 
