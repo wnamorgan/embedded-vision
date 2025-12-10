@@ -14,11 +14,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     nano \
     git \
     htop \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # (Optional) Install any extra Python packages you know you'll want everywhere
 # RUN pip install --no-cache-dir <extra-packages>
-RUN pip install --no-cache-dir "ultralytics[export]"
+# Copy Python deps list
+COPY requirements.txt /tmp/requirements.txt
+# Install Python deps
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Default workspace inside the container
 WORKDIR /workspace/
