@@ -17,3 +17,22 @@ runs/
 targets/colab/my_model.zip
 targets/colab/my_model/
 targets/nvidia/yolo11*
+
+# Label Studio data (projects, DB, uploads)
+labeling/ls-data/*
+!labeling/ls-data/.gitkeep
+
+# YOLO backend scratch + cache
+labeling/yolo/data_server/*
+!labeling/yolo/data_server/.gitkeep
+labeling/yolo/cache_dir/*
+!labeling/yolo/cache_dir/.gitkeep
+
+# Secrets / environment config
+labeling/.env
+
+# Large model weights/checkpoints
+models/*.pt
+models/*.onnx
+models/*.pth
+models/checkpoints/

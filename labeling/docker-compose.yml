@@ -1,0 +1,30 @@
+services:
+  labelstudio:
+    image: heartexlabs/label-studio:latest
+    container_name: labelstudio
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./ls-data:/label-studio/data
+
+  yolo:
+    container_name: yolo
+    image: humansignal/yolo:v0
+    depends_on:
+      - labelstudio
+    environment:
+      - LABEL_STUDIO_HOST=http://labelstudio:8080
+      - LABEL_STUDIO_API_KEY=${LABEL_STUDIO_API_KEY}
+      - MODEL_DIR=/data/models
+      - MODEL_ROOT=/app/models
+      - ALLOW_CUSTOM_MODEL_PATH=true
+      - MODEL_SCORE_THRESHOLD=0.5
+      - PYTHONPATH=/app
+    ports:
+      - "9090:9090"
+    volumes:
+      # shared training weights: top-level models/ → /app/models
+      - ../models:/app/models
+      # backend’s own scratch / state
+      - ./yolo/data_server:/data
+      - ./yolo/cache_dir:/app/cache_dir
