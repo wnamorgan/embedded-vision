@@ -55,64 +55,6 @@ def get_model(model_path):
 
     return model
 
-
-# def disp_stats(metrics: dict[str, list[float]], label: str = "[run_model]"):
-#     """
-#     metrics: dict of {column_name: list_of_values}
-#              e.g. {"total_ms": times_ms, "inf_ms": inf_times_ms}
-#     """
-#     if not metrics:
-#         print("disp_stats: no data.")
-#         return
-
-#     # Assume all lists same length
-#     first_key = next(iter(metrics))
-#     n = len(metrics[first_key])
-#     if n == 0:
-#         print("disp_stats: empty lists.")
-#         return
-
-#     # Sort each column once
-#     sorted_metrics = {k: sorted(v) for k, v in metrics.items()}
-
-#     def pct(arr, p):
-#         idx = int(round((p / 100.0) * (n - 1)))
-#         return arr[idx]
-
-#     # --- Summary stats ---
-#     print(f"\n{label} Stats over {n} runs")
-
-#     # Header
-#     col_names = list(metrics.keys())
-#     col_width = 10
-#     header = " " * 10 + "".join(f"{name:>{col_width}}" for name in col_names)
-#     print(header)
-
-#     # Rows: min, max, mean
-#     rows = {
-#         "min":  {k: v[0]           for k, v in sorted_metrics.items()},
-#         "max":  {k: v[-1]          for k, v in sorted_metrics.items()},
-#         "mean": {k: sum(v) / n     for k, v in sorted_metrics.items()},
-#     }
-
-#     for row_name, vals in rows.items():
-#         line = f"{row_name:>10}:"
-#         for k in col_names:
-#             line += f"{vals[k]:{col_width}.2f}"
-#         print(line)
-
-#     # --- Percentiles ---
-#     percentiles = [10, 25, 50, 75, 90, 95, 99, 100]
-#     print(f"\n{label} Empirical CDF")
-#     header = " " * 10 + "".join(f"{name:>{col_width}}" for name in col_names)
-#     print("  pct" + header[3:])  # align roughly with above
-
-#     for p in percentiles:
-#         line = f"{p:3d}th :"
-#         for k in col_names:
-#             val = pct(sorted_metrics[k], p)
-#             line += f"{val:{col_width}.2f}"
-#         print(line)
 def disp_stats(metrics: dict[str, list[float]], label: str = "[run_model]"):
     """
     metrics: dict of {column_name: list_of_values}

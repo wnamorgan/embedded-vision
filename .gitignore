@@ -19,8 +19,11 @@ targets/colab/my_model/
 targets/nvidia/yolo11*
 
 # Label Studio data (projects, DB, uploads)
-labeling/ls-data/*
-!labeling/ls-data/.gitkeep
+labeling/ls-data/**
+!labeling/ls-data/media/
+!labeling/ls-data/media/upload/
+!labeling/ls-data/media/upload/.gitkeep
+
 
 # YOLO backend scratch + cache
 labeling/yolo/data_server/*
