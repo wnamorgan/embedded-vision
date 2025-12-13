@@ -12,22 +12,14 @@ services:
       - LOCAL_FILES_SERVING_ENABLED=true
   yolo:
     container_name: yolo
-    image: humansignal/yolo:v0
+    image: heartexlabs/label-studio-ml-backend:yolo-master
     depends_on:
       - labelstudio
     environment:
       - LABEL_STUDIO_HOST=http://labelstudio:8080
       - LABEL_STUDIO_API_KEY=${LABEL_STUDIO_API_KEY}
-      - MODEL_DIR=/data/models
-      - MODEL_ROOT=/app/models
-      - ALLOW_CUSTOM_MODEL_PATH=true
-      - MODEL_SCORE_THRESHOLD=0.5
-      - PYTHONPATH=/app
+      - LABEL_STUDIO_ENABLE_LEGACY_API_TOKEN=true
     ports:
       - "9090:9090"
     volumes:
-      # shared training weights: top-level models/ → /app/models
       - ../models:/app/models
-      # backend’s own scratch / state
-      - ./yolo/data_server:/data
-      - ./yolo/cache_dir:/app/cache_dir
