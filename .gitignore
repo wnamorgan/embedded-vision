@@ -19,8 +19,12 @@ targets/colab/my_model/
 targets/nvidia/yolo11*
 
 # Label Studio data (projects, DB, uploads)
-labeling/ls-data/*
-!labeling/ls-data/.gitkeep
+labeling/tmp/
+labeling/ls-data/**
+!labeling/ls-data/media/
+!labeling/ls-data/media/upload/
+!labeling/ls-data/media/upload/.gitkeep
+
 
 # YOLO backend scratch + cache
 labeling/yolo/data_server/*
@@ -36,6 +40,8 @@ models/*.pt
 models/*.onnx
 models/*.pth
 models/checkpoints/
+!models/yolo11s_coins.pt
+!models/yolo11s_ToyCars.pt
 
 # Data files are stored in data folder and have the form data001, ... data999
 data/data???/
