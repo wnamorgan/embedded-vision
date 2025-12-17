@@ -9,6 +9,7 @@ services:
       - ./ls-data/media:/data     # <-- need special mounting so that data path in container matches json on imported data
     environment:
       - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/data # e.g., label-studio/data or /data in cloud storage - map to those volumes above
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
       - LOCAL_FILES_SERVING_ENABLED=true
   yolo:
     container_name: yolo

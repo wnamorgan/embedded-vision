@@ -82,8 +82,8 @@ services:
       - ./ls-data/media:/data
     environment:
       - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/data
-      - LOCAL_FILES_SERVING_ENABLED=true
-
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+      - LOCAL_FILES_SERVING_ENABLED=true   # backward compatibility
   yolo:
     container_name: yolo
     image: heartexlabs/label-studio-ml-backend:yolo-master
@@ -123,8 +123,7 @@ Label Studio has **two token types**:
 ### 4.1 Enable Legacy Tokens in UI
 
 In Label Studio UI:
-- Enable **Legacy API Tokens**: Go to Orgainzation -> API Token Settings -> Legacy Tokens
-
+- Enable **Legacy API Tokens**: Go to Organization -> API Token Settings -> Legacy Tokens
 - Generate a **legacy token**: Account and Settings -> Legacy Token -> Copy
 
 ### 4.2 Store Token in `.env`
@@ -223,9 +222,8 @@ Label Studio does NOT upload models.
 
 ### 9.1 Local Files: How Data Is Actually Added
 
-**You do NOT add local storage via the Label Studio GUI.**
-
-Local file access is enabled **entirely by Docker volume mounts**, defined in `docker-compose.yml`:
+For this workflow, you typically do not need to configure Local Storage in the UI for JSON imports when using the /data/local-files/?d=... pattern.
+Local file access is enabled by Docker volume mounts **and** the `LABEL_STUDIO_LOCAL_FILES_*` environment variables in `docker-compose.yml`:
 
 ```yaml
 volumes:
@@ -233,7 +231,7 @@ volumes:
   - ./ls-data/media:/data
 environment:
   - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/data
-  - LOCAL_FILES_SERVING_ENABLED=true
+  - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
 ```
 
 As a result:
@@ -242,19 +240,22 @@ As a result:
   ```text
   labeling/ls-data/media/
   ```
-  are immediately visible to Label Studio
-- No “Add Local Storage” action is required in the UI
+  are visible inside the container under `/data/...`.
+- JSON tasks will refer to those files using the **local-files URL**:
+  ```text
+  /data/local-files/?d=<relative-path-under-/data>
+  ```
 - Files can be uploaded directly through the UI **or**
-  simply copied into the directory on disk
+  simply copied into the directory on disk.
 
-**Filesystem presence is the source of truth.**
+**Filesystem presence plus the `/data/local-files/?d=...` URL is the source of truth.**
 
 Verification:
 ```bash
 docker compose exec labelstudio ls /data
 ```
 
-If files appear here, Label Studio can load them.
+If files appear here, Label Studio can serve them via `/data/local-files/?d=...`.
 
 ---
 
@@ -263,40 +264,63 @@ If files appear here, Label Studio can load them.
 There are two supported paths:
 
 #### A) Direct filesystem import (preferred)
+
 1. Copy images to:
    ```text
    labeling/ls-data/media/upload/<data_dir>/<file>.jpg
    ```
-2. Open the project in Label Studio
-3. Import tasks (or refresh if already configured)
+2. When constructing or rewriting JSON tasks, point each image to:
+   ```text
+   /data/local-files/?d=upload/<data_dir>/<file>.jpg
+   ```
+3. Open the project in Label Studio and import the JSON.
 
-No GUI storage configuration is required.
+No GUI storage configuration is required for this local-files URL pattern.
 
 #### B) Upload via UI
+
 - Uploading images via the UI places them under:
   ```text
   /label-studio/data/upload
   ```
-- This also works, but mixes managed uploads with local files
+- This also works, but mixes managed uploads with local files and is not what this guide optimizes for.
 
-Both methods are valid; filesystem-based import is simpler and deterministic.
+Both methods work; this guide assumes **direct filesystem + `/data/local-files/?d=...` URLs**.
 
 ---
 
-## Section 10 — Importing Annotation JSON (Cloud Storage Path)
+## Section 10 — Importing Annotation JSON (Local-Files URL)
 
-### 10.1 JSON Imports Use **Cloud Storage**, Not Local Files
+### 10.1 JSON Imports Use the `/data/local-files/?d=...` Pattern
 
-When importing **annotation JSON**, Label Studio treats this as **cloud storage**, not local files.
+When importing **annotation JSON**, this guide uses the **local-files handler**, not Cloud Storage.
 
-**The required path is:**
-```text
-/data/upload
+Given:
+
+```yaml
+LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/data
 ```
 
-Not `/data`.
+and images under:
 
-This matches how Label Studio internally resolves uploaded media.
+```text
+/data/upload/...
+```
+
+your JSON `image` values must be of the form:
+
+```json
+"image": "/data/local-files/?d=upload/<subdirs>/<file>.jpg"
+```
+
+Examples:
+
+```json
+"image": "/data/local-files/?d=upload/2/example.jpg"
+"image": "/data/local-files/?d=upload/toy_cars/example_001.jpg"
+```
+
+This pattern is portable across machines and does **not** depend on Label Studio’s upload database.
 
 ---
 
@@ -308,13 +332,27 @@ Annotation JSON files often contain references like:
 "image": "/data/media/example.jpg"
 ```
 
-This **will not work** for JSON import.
-
-They must be rewritten to:
+or:
 
 ```json
 "image": "/data/upload/example.jpg"
 ```
+
+These will **not** work reliably in newer Label Studio versions.
+
+They must be rewritten to the **local-files** form:
+
+```json
+"image": "/data/local-files/?d=upload/example.jpg"
+```
+
+or, more generally:
+
+```json
+"image": "/data/local-files/?d=<relative-path-under-/data>"
+```
+
+where `<relative-path-under-/data>` matches the on-disk layout inside `/data`.
 
 ---
 
@@ -334,12 +372,25 @@ with in_file.open() as f:
 
 for task in data:
     if "data" in task and "image" in task["data"]:
-        task["data"]["image"] = task["data"]["image"].replace(
-            "/data/media/",
-            "/data/upload/"
-        )
+        p = task["data"]["image"]
 
-with out_file.open("w") as f:
+        # Normalize any of these:
+        #   "/data/media/upload/2/..."
+        #   "/data/upload/2/..."
+        #   "upload/2/..."
+        #   "/upload/2/..."
+        # down to: "upload/2/..."
+        if p.startswith("/data/"):
+            p = p[len("/data/"):]           # "media/upload/2/..." or "upload/2/..."
+        if p.startswith("media/"):
+            p = p[len("media/"):]           # "upload/2/..."
+        if p.startswith("/"):
+            p = p[1:]                       # "upload/2/..."
+
+        # Final, LS-approved form:
+        task["data"]["image"] = f"/data/local-files/?d={p}"
+
+with out_file.open() as f:
     json.dump(data, f, indent=2)
 
 print("Wrote:", out_file)
@@ -351,18 +402,18 @@ Then import `fixed_annotations.json` via the Label Studio UI.
 
 ### 10.4 Summary of Data Paths (Authoritative)
 
-| Purpose | Path |
-|------|-----|
-| Local filesystem images | `/data` |
-| Uploaded images | `/data/upload` |
-| JSON annotation import | **must reference `/data/upload`** |
+| Purpose                | Path / Pattern                                      |
+|------------------------|-----------------------------------------------------|
+| Local filesystem root  | `/data`                                             |
+| On-disk images         | `/data/upload/...`                                  |
+| JSON annotation import | `/data/local-files/?d=upload/<subdirs>/<file>.jpg` |
 
 ---
 
 ### Final Rule
 
-> **Local files are enabled by container mounts, not the GUI.**  
-> **JSON imports use cloud storage semantics and must reference `/data/upload`.**
+> **Local files are enabled by container mounts + `LABEL_STUDIO_LOCAL_FILES_*` env vars.**  
+> **JSON imports must use `/data/local-files/?d=<relative-path-under-/data>`, not `/data/upload/...`.**
 
 ---
 
@@ -483,11 +534,15 @@ Predictions should now appear automatically when opening tasks.
 ---
 
 #### 10.6.6 Monitor YOLO Predictions
+
 You can issue the following command to monitor the YOLO predictions.
+
 ```bash
 docker compose logs -f yolo
 ```
-In the label studio front end, when you select an image, you should see something like the following.
+
+In the Label Studio front end, when you select an image, you should see something like the following.
+
 ```bash
 yolo  | image 1/1 /root/.cache/label-studio/0f6197fb__7d1c606c-ff5db76f-20251210_093346_379821.jpg: 384x640 1 orange, 67.8ms
 yolo  | Speed: 1.2ms preprocess, 67.8ms inference, 0.3ms postprocess per image at shape (1, 3, 384, 640)
@@ -571,5 +626,189 @@ Always check in this order:
 
 ## FINAL RULE
 
-> If you see `401`, you are using the wrong token.
-Stop and fix that first.
+> If you see `401`, you are using the wrong token **or the wrong image URL pattern**.  
+> Fix the token and ensure JSON uses the correct image URL mode for this machine
+(/data/local-files/?d=... recommended, /data/upload/... legacy — see Appendix A).
+
+# Appendix A — Backward Compatibility Notes (Two Image-Path Modes)
+
+This appendix documents the **two image-path modes** we’ve observed across machines, why they differ, and **exactly what changes** (if any) you must make to keep things working without relearning this again.
+
+---
+
+## A.1 The Two Modes
+
+### Mode A (Recommended / Portable): `local-files` URL
+**Use when:** you want the most reproducible behavior across fresh installs / newer Label Studio builds.
+
+**JSON `image` field pattern (authoritative):**
+```text
+/data/local-files/?d=<relative-path-under-LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT>
+```
+Example (your proven-good case):
+```text
+/data/local-files/?d=upload/2/bb2ef195-20251210_084508_714810.jpg
+```
+
+**Why this works:** it uses Label Studio’s local-file proxy handler, which is designed for serving mounted files. Current docs explicitly describe this prefix. 
+
+---
+
+### Mode B (Legacy / “Worked on the other machine”): direct `/data/upload/...`
+**Use when:** your other machine/project already works with direct paths like:
+```text
+/data/upload/<...>
+```
+and you don’t want to disturb that workflow.
+
+**JSON `image` field pattern (legacy):**
+```text
+/data/upload/<subdirs>/<file>
+```
+Example:
+```text
+/data/upload/2/bb2ef195-20251210_084508_714810.jpg
+```
+
+**Important warning:** In newer Label Studio builds this often fails with auth/URL-loading issues (401 / “issue loading URL”), which is why Mode A exists and is documented. 
+
+---
+
+## A.2 Docker Compose: “Keep Both Flags” for Maximum Compatibility
+
+Different Label Studio builds/docs have historically referenced different enable flags (this inconsistency is real and has been reported).
+
+To avoid surprises, **keep both** in `labelstudio.environment`:
+
+```yaml
+environment:
+  - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/data
+  - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+  - LOCAL_FILES_SERVING_ENABLED=true   # legacy compatibility (some older docs/images mention it)
+```
+
+Notes:
+- Modern docs commonly reference the `LABEL_STUDIO_LOCAL_FILES_*` variables. 
+- Older versions/issues/messages sometimes reference `LOCAL_FILES_SERVING_ENABLED`. 
+
+---
+
+## A.3 Directory Layout (Host ↔ Container)
+
+Given your compose mounts:
+
+```yaml
+volumes:
+  - ./ls-data:/label-studio/data
+  - ./ls-data/media:/data
+```
+
+Then:
+
+### Host
+```text
+embedded_vision/labeling/ls-data/media/upload/...
+```
+
+### Label Studio container
+```text
+/data/upload/...
+```
+
+This is true for **both** Mode A and Mode B.
+
+---
+
+## A.4 “Which mode am I in?” (10-second test)
+
+Pick a known file and test in your browser:
+
+### Test 1 — local-files (Mode A)
+```text
+http://localhost:8080/data/local-files/?d=upload/2/<file>.jpg
+```
+- If it loads: Mode A is available (recommended).
+
+### Test 2 — direct upload path (Mode B)
+```text
+http://localhost:8080/data/upload/2/<file>.jpg
+```
+- If this loads *without* 401/URL errors: Mode B is supported in that environment.
+- If it returns 401/URL errors: use Mode A.
+
+---
+
+## A.5 JSON Rewrite Scripts (Both Modes)
+
+### A.5.1 Rewrite to Mode A (`/data/local-files/?d=...`)  ✅ recommended
+```python
+import json
+from pathlib import Path
+
+in_file = Path("input.json")
+out_file = Path("fixed_mode_a.json")
+
+with in_file.open() as f:
+    data = json.load(f)
+
+for task in data:
+    if "data" in task and "image" in task["data"]:
+        p = task["data"]["image"]
+
+        # Normalize to: "upload/..."
+        if p.startswith("/data/"):
+            p = p[len("/data/"):]            # "media/upload/..." or "upload/..."
+        if p.startswith("media/"):
+            p = p[len("media/"):]            # "upload/..."
+        if p.startswith("/"):
+            p = p[1:]                        # "upload/..."
+
+        task["data"]["image"] = f"/data/local-files/?d={p}"
+
+with out_file.open("w") as f:
+    json.dump(data, f, indent=2)
+
+print("Wrote:", out_file)
+```
+
+### A.5.2 Rewrite to Mode B (`/data/upload/...`)  ⚠ legacy
+Use this only if your environment/browser test shows `/data/upload/...` loads successfully.
+
+```python
+import json
+from pathlib import Path
+
+in_file = Path("input.json")
+out_file = Path("fixed_mode_b.json")
+
+with in_file.open() as f:
+    data = json.load(f)
+
+for task in data:
+    if "data" in task and "image" in task["data"]:
+        p = task["data"]["image"]
+
+        # Normalize to: "upload/..."
+        if p.startswith("/data/"):
+            p = p[len("/data/"):]            # "media/upload/..." or "upload/..."
+        if p.startswith("media/"):
+            p = p[len("media/"):]            # "upload/..."
+        if p.startswith("/"):
+            p = p[1:]                        # "upload/..."
+
+        task["data"]["image"] = f"/data/{p}" # => "/data/upload/..."
+
+with out_file.open("w") as f:
+    json.dump(data, f, indent=2)
+
+print("Wrote:", out_file)
+```
+
+---
+
+## A.6 Practical Guidance (So you don’t get bitten again)
+
+- Put **Mode A** in the “mainline” workflow when you want portability and fewer surprises. Current docs explicitly call out the `/data/local-files/?d=` prefix. 
+- Keep **Mode B** available as a legacy option, but gate it behind the simple browser test in A.4.
+- Keep **both enable flags** in compose for cross-machine compatibility (A.2).
+
