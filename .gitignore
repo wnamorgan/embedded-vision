@@ -42,6 +42,6 @@ models/*.pth
 models/checkpoints/
 !models/yolo11s_coins.pt
 !models/yolo11s_ToyCars.pt
-
+!models/yolo11n_toy_cars_190.pt
 # Data files are stored in data folder and have the form data001, ... data999
 data/data???/
