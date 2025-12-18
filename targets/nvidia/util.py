@@ -5,10 +5,14 @@ from ultralytics import YOLO
 
 IMG_SIZE    = 640
 DEVICE      = 0
+FP16        = True
+USE_ENGINE  = True
+
 
 def create_engine(model_path, engine_path, device: int = 0, imgsz: int = 640):
     """
     Export a YOLO model to TensorRT engine if it does not already exist.
+    Deletes the intermediate ONNX file and appends _FP16 or _FP32 to the engine file.
     """
     model_path = Path(model_path).resolve()
     engine_path = Path(engine_path).resolve()
@@ -20,15 +24,40 @@ def create_engine(model_path, engine_path, device: int = 0, imgsz: int = 640):
     print(f"[create_engine] Engine '{engine_path}' not found. Exporting TensorRT engine...")
     model = YOLO(str(model_path))
 
+    # Export to TensorRT engine
     model.export(
         format="engine",
         device=device,
-        half=True,
+        half=FP16,  # Use FP16 if flag is True
         imgsz=imgsz,
     )
 
-    print(f"[create_engine] Export complete (expected file: {engine_path}).")
+    # After exporting, get the correct engine name based on FP16 flag
+    engine_filename = f"{engine_path.stem}_{'FP16' if FP16 else 'FP32'}{engine_path.suffix}"
+    engine_path = engine_path.with_name(engine_filename)
 
+    # Rename the engine file to include _FP16 or _FP32
+    model.model.save(engine_path)
+
+    # Delete the intermediate ONNX file if it exists
+    onnx_path = model_path.with_suffix(".onnx")
+    if onnx_path.exists():
+        onnx_path.unlink()  # Delete the ONNX file
+        print(f"[create_engine] Deleted intermediate ONNX file: {onnx_path}")
+
+    print(f"[create_engine] Export complete. Engine saved as: {engine_path}")
+
+
+def describe_model(model):
+    # Check if the model is a TensorRT engine or a PyTorch model
+    if hasattr(model, 'model') and hasattr(model.model, 'args'):
+        # For PyTorch models
+        precision = "FP16" if model.model.args.get('half', False) else "FP32"
+        print(f"Model type: PyTorch | Precision: {precision}")
+    else:
+        # For TensorRT engines
+        precision = "FP16" if "_FP16" in model.__str__() else "FP32"
+        print(f"Model type: TensorRT | Precision: {precision}")
 
 def get_model(model_path):
     """
@@ -36,24 +65,39 @@ def get_model(model_path):
     On x86: load the PyTorch .pt model directly.
     """
     model_path = Path(model_path).resolve()
-    engine_path = model_path.with_suffix(".engine")
+    
+    # Strip any existing precision suffix from the model name (i.e., _FP16 or _FP32)
+    model_name = model_path.stem  # Base name without suffix
+    engine_path_fp16 = model_path.with_name(f"{model_name}_FP16.engine")
+    engine_path_fp32 = model_path.with_name(f"{model_name}_FP32.engine")
 
     is_jetson = (platform.machine() == "aarch64")
 
-    if is_jetson:
-        # Create engine if needed
-        create_engine(model_path, engine_path, device=DEVICE, imgsz=IMG_SIZE)
+    if is_jetson and USE_ENGINE:
+        # Check for the correct engine based on FP16 flag
+        if FP16 and engine_path_fp16.exists():
+            print(f"[get_model] Loading TensorRT engine (FP16) from '{engine_path_fp16}'...")
+            model = YOLO(str(engine_path_fp16))
+        elif not FP16 and engine_path_fp32.exists():
+            print(f"[get_model] Loading TensorRT engine (FP32) from '{engine_path_fp32}'...")
+            model = YOLO(str(engine_path_fp32))
+        else:
+            # Engine doesn't exist, create one
+            print(f"[get_model] Engine not found. Creating TensorRT engine with {'FP16' if FP16 else 'FP32'} precision...")
+            create_engine(model_path, engine_path_fp16 if FP16 else engine_path_fp32, device=DEVICE, imgsz=IMG_SIZE)
+            model = YOLO(str(engine_path_fp16 if FP16 else engine_path_fp32))
 
-        if not engine_path.exists():
-            raise FileNotFoundError(f"[get_model] Engine file '{engine_path}' not found.")
-
-        print(f"[get_model] Loading TensorRT engine from '{engine_path}'...")
-        model = YOLO(str(engine_path))
     else:
         print(f"[get_model] Loading PyTorch model from '{model_path}'...")
         model = YOLO(str(model_path))
 
+    # Describe the model after loading
+    describe_model(model)
+
     return model
+
+
+
 
 def disp_stats(metrics: dict[str, list[float]], label: str = "[run_model]"):
     """

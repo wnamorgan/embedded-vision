@@ -12,12 +12,12 @@ import util  # uses util.get_model, util.DEVICE, util.IMG_SIZE
 # Camera settings
 CAM_INDEX = 0           # /dev/video0
 WIDTH, HEIGHT = 1280, 720
-CONF_THRES = 0.85       # YOLO confidence threshold
+CONF_THRES = 0.75       # YOLO confidence threshold
 
 # Paths
 FILE_PATH  = Path(__file__).resolve().parent
-MODEL_PATH = (FILE_PATH / "yolo11n_coins.pt").resolve()
-
+#MODEL_PATH = (FILE_PATH / "yolo11n_coins.pt").resolve()
+MODEL_PATH = (FILE_PATH.parent.parent / "models" / "yolo11n_toy_cars_190.pt").resolve()
 
 def main():
     print(f"[main] Using MODEL_PATH = {MODEL_PATH}")
